@@ -1,10 +1,11 @@
 const express = require("express");
-const RobotController = require("./controllers/RobotControllers");
-
 const router = express.Router();
+const robotController = require("../controllers/RobotControllers");
+const leaderboardController = require("../controllers/leaderboardController");
 
-router.get("/", RobotController.getRobots);
-
-router.post("/:name", RobotController.updatedisqualificationstatus);
+router.get("/", leaderboardController.getLeaderboard);
+router.get("/leaderboard", leaderboardController.getLeaderboard);
+router.get("/:name", robotController.getRobotDetails);
+router.patch("/:name/disqualification", robotController.updateDisqualification);
 
 module.exports = router;
