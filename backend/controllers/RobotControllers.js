@@ -13,15 +13,3 @@ exports.getRobotDetails = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-exports.updateDisqualification = async (req, res) => {
-  const { name } = req.params;
-  const { disqualified } = req.body;
-  try {
-    await robotModel.updateDisqualificationState(name, disqualified);
-    res.status(200).json({ message: "Disqualification state updated" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};

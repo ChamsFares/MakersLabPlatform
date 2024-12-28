@@ -1,8 +1,8 @@
-const leaderboardtModel = require("../models/robotModel");
+const leaderboardtModel = require("../models/leaderboardModel");
 
 exports.getLeaderboard = async (req, res) => {
   try {
-    const leaderboard = await leaderboardtModel.getLeaderboard();
+    const leaderboard = await leaderboardtModel.Leaderboard();
     res.json(leaderboard);
   } catch (error) {
     console.error(error);

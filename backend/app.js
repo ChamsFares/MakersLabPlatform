@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const robotRoutes = require("./routes/RobotRoutes");
+const robotRoutes = require("./routes/robotRouter");
 
 const app = express();
 app.use(cors());

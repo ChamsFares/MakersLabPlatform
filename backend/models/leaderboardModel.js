@@ -1,18 +1,24 @@
 const { queryApi, bucket } = require("../utils/influxConfig");
 
-exports.getLeaderboard = async () => {
-  const query = `from(bucket: \"${bucket}\") |> range(start: -1d) |> filter(fn: (r) => r._measurement == \"robots\") |> group(columns: [\"name\"]) |> sort(columns: [\"_value\"], desc: true)`;
-  const result = [];
+exports.Leaderboard = async () => {
+  const query = `from(bucket: "${bucket}") |> range(start: -2d) 
+  |> filter(fn: (r) => r._measurement == "competetiontest")
+  |> group(columns: ["robot_name"])`;
+
+  const result = new Set();
+
   return new Promise((resolve, reject) => {
     queryApi.queryRows(query, {
       next(row, tableMeta) {
-        result.push(tableMeta.toObject(row));
+        const rowObject = tableMeta.toObject(row);
+        result.add(rowObject.robot_name);
       },
       error(error) {
         reject(error);
       },
       complete() {
-        resolve(result);
+        console.log("Final Result:", Array.from(result));
+        resolve(Array.from(result));
       },
     });
   });
