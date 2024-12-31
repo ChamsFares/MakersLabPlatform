@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { InfluxDB } = require("@influxdata/influxdb-client");
+const { InfluxDB, Point } = require("@influxdata/influxdb-client");
 
 console.log("INFLUX_URL:", process.env.INFLUXDB_URL);
 console.log("INFLUX_TOKEN:", process.env.INFLUXDB_TOKEN);
@@ -20,4 +20,5 @@ module.exports = {
   writeApi,
   queryApi,
   bucket,
+  Point,
 };

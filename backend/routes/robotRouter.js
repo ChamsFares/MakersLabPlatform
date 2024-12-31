@@ -5,6 +5,7 @@ const leaderboardController = require("../controllers/leaderboardController");
 
 router.get("/", leaderboardController.getLeaderboard);
 router.get("/leaderboard", leaderboardController.getLeaderboard);
-router.get("/:name", robotController.getRobotDetails);
+router.get("/:id", robotController.getRobotDetails);
+router.put("/:id/update", robotController.updateRobotDetails);
 
 module.exports = router;
