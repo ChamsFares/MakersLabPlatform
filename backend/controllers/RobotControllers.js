@@ -2,9 +2,8 @@ const robotModel = require("../models/robotModel");
 const { emitUpdate } = require("../sockets");
 
 exports.getRobotDetails = async (req, res) => {
-  const { id } = req.params;
   try {
-    const robot = await robotModel.getRobotById(id);
+    const robot = await robotModel.getRobotById(req.params.id);
     if (!robot) {
       return res.status(404).json({ message: "Robot not found" });
     }
@@ -14,14 +13,29 @@ exports.getRobotDetails = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 exports.updateRobotDetails = async (req, res) => {
   const { id } = req.params;
-  const { score, timefinale } = req.query;
+  const {
+    deb,
+    challenge1,
+    challenge2,
+    challenge3,
+    challenge4,
+    challenge5,
+    fin,
+  } = req.query;
 
   const data = {
-    score: parseInt(score, 0),
-    timefinale: parseInt(timefinale, 0),
+    deb: parseInt(deb),
+    challenge1: parseInt(challenge1),
+    challenge2: parseInt(challenge2, 10),
+    challenge3: parseInt(challenge3, 10),
+    challenge4: parseInt(challenge4, 10),
+    challenge5: parseInt(challenge5, 10),
+    fin: parseInt(fin, 10),
   };
+
   try {
     await robotModel.updateRobotById(id, data);
     emitUpdate("robotUpdate", { ...data });

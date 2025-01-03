@@ -1,5 +1,5 @@
 const { Server } = require("socket.io");
-const { getRobotDetailsById } = require("./models/robotModel");
+const { getRobotById } = require("./models/robotModel");
 let io;
 
 const initSocket = (server) => {
@@ -10,8 +10,10 @@ const initSocket = (server) => {
 
     socket.on("getRobotDetails", async (robotId) => {
       try {
-        const robotDetails = await getRobotDetailsById(robotId);
+        console.log(`Fetching details for robot ID: ${robotId}`);
+        const robotDetails = await getRobotById(robotId);
         socket.emit("robotDetails", robotDetails);
+        console.log(`Sent details for robot ID: ${robotId}`);
       } catch (error) {
         console.error(`Error fetching robot details for ${robotId}:`, error);
         socket.emit("error", { message: "Error fetching robot details" });
@@ -26,6 +28,7 @@ const initSocket = (server) => {
 
 const emitUpdate = (event, data) => {
   if (io) {
+    console.log(`Emitting event: ${event}`);
     io.emit(event, data);
   }
 };

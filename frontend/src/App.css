@@ -55,3 +55,7 @@
 .modal button {
   margin: 5px;
 }
+.img {
+  max-width: 6000px; /* Adjust the max-width as needed */
+  height: auto;
+}

@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from "react";
 import Map from "./components/Map";
-import Leaderboard from "./components/leaderboard";
+
 import axios from "axios";
-import io from "socket.io-client";
+
 import "./App.css";
 
-const fetchRobots = async () => {
+interface Robot {
+  id: string;
+  name: string;
+  score: number;
+  time: number;
+}
+
+interface RobotsCache {
+  [key: string]: Robot;
+}
+
+const fetchRobots = async (): Promise<RobotsCache> => {
   const response = await axios.get("http://localhost:3000/api/leaderboard", {
     headers: {
       "Content-Type": "application/json",
@@ -33,19 +44,10 @@ const App: React.FC = () => {
   const [disqualifiedRobots, setDisqualifiedRobots] = useState<string[]>([]);
   const [showDisqualifyModal, setShowDisqualifyModal] =
     useState<boolean>(false);
-  const [challengeUpdates, setChallengeUpdates] = useState<any[]>([]);
   const [countdown, setCountdown] = useState<number>(10);
-  const [robotsCache, setRobotsCache] = useState<any>({});
+  const [robotsCache, setRobotsCache] = useState<RobotsCache>({});
 
   useEffect(() => {
-    const socket = io("http://localhost:5000");
-    socket.on("update", (data) => {
-      console.log("Received update from server:", data);
-      setRobotsCache(data);
-      const robotNames = Object.values(data).map((robot: any) => robot.name);
-      setRobotNames(robotNames);
-    });
-
     const fetchData = async () => {
       if (Object.keys(robotsCache).length === 0) {
         try {
@@ -53,7 +55,7 @@ const App: React.FC = () => {
           console.log("Fetched robots:", data);
           setRobotsCache(data);
           const robotNames = Object.values(data).map(
-            (robot: any) => robot.name
+            (robot) => robot.name || "Unnamed Robot"
           );
           console.log("Robot names:", robotNames);
           setRobotNames(robotNames);
@@ -61,7 +63,7 @@ const App: React.FC = () => {
             const firstRobotId = Object.keys(data)[0];
             const firstRobot = data[firstRobotId];
             setRobotId(firstRobotId);
-            setRobotName(firstRobot.name);
+            setRobotName(firstRobot.name || "Unnamed Robot");
             setScore(firstRobot.score);
             setTime(firstRobot.time);
           }
@@ -72,11 +74,7 @@ const App: React.FC = () => {
     };
 
     fetchData();
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [robotsCache]);
+  }, [robotsCache, robotId]);
 
   const chooseRandomRobot = () => {
     const availableRobots = Object.keys(robotsCache).filter(
@@ -91,7 +89,7 @@ const App: React.FC = () => {
     const robot = robotsCache[randomRobotId];
 
     setRobotId(randomRobotId);
-    setRobotName(robot.name);
+    setRobotName(robot.name || "Unnamed Robot");
     setScore(robot.score);
     setTime(robot.time);
   };
@@ -118,6 +116,10 @@ const App: React.FC = () => {
     if (timer) {
       clearInterval(timer);
     }
+  };
+
+  const updateScore = (score: number, newScore: number) => {
+    setScore(score + newScore);
   };
 
   const disqualifyRobot = () => {
@@ -156,8 +158,13 @@ const App: React.FC = () => {
         )}
         {startclicked && <button onClick={disqualifyRobot}>Disqualify</button>}
       </div>
-      <Map robotName={robotName} score={score} time={time} />
-      <Leaderboard robots={robotsCache} />
+      <Map
+        robotId={robotId}
+        robotName={robotName}
+        score={score}
+        time={time}
+        update={updateScore}
+      />
       {showDisqualifyModal && (
         <div className="modal">
           <p>Robot {robotName} has been disqualified.</p>

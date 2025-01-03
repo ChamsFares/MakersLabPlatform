@@ -1,29 +1,27 @@
 const { writeApi, queryApi, bucket, Point } = require("../utils/influxConfig");
 
 exports.getRobotById = async (id) => {
-  const query = `from(bucket: "${bucket}") |> range(start: -5s) 
+  const query = `from(bucket: "${bucket}") 
+  |> range(start: -1s) 
   |> filter(fn: (r) => r._measurement == "competetiontest2" and r.robot_ID == "${id}")
   |> group(columns: ["_field", "_value"])`;
-  const result = new Set();
+
+  const result = {};
+
   return new Promise((resolve, reject) => {
     queryApi.queryRows(query, {
       next(row, tableMeta) {
         const rowObject = tableMeta.toObject(row);
         console.log("Row Object:", rowObject);
-        const entry = JSON.stringify({
-          [rowObject._field]: rowObject._value,
-        });
-        result.add(entry);
+        result[rowObject._field] = rowObject._value;
       },
       error(error) {
+        console.error("Query Error:", error);
         reject(error);
       },
       complete() {
-        const finalResult = Array.from(result).map((entry) =>
-          JSON.parse(entry)
-        );
-        console.log("Final Result:", finalResult);
-        resolve(finalResult);
+        console.log("Final Result:", result);
+        resolve(result);
       },
     });
   });
@@ -33,8 +31,13 @@ exports.updateRobotById = async (id, data) => {
   try {
     const point = new Point("competetiontest2")
       .tag("robot_ID", id)
-      .intField("score", parseInt(data.score))
-      .intField("tempfinale", data.timefinale)
+      .intField("debut", parseInt(data.deb))
+      .intField("challenge1", parseInt(data.challenge1))
+      .intField("challenge2", parseInt(data.challenge2))
+      .intField("challenge3", parseInt(data.challenge3))
+      .intField("challenge4", parseInt(data.challenge4))
+      .intField("challenge5", parseInt(data.challenge5))
+      .intField("fin", parseInt(data.fin))
       .timestamp(new Date());
 
     writeApi.writePoint(point);
@@ -42,9 +45,5 @@ exports.updateRobotById = async (id, data) => {
     console.log(`Robot data for ${id} updated successfully.`);
   } catch (error) {
     console.error(`Error updating robot data for ${id}:`, error);
-  } finally {
-    writeApi.close().catch((err) => {
-      console.error("Error closing writeApi:", err);
-    });
   }
 };
