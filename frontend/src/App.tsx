@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Map from "./components/Map";
-
 import axios from "axios";
-
+import Swal from "sweetalert2";
 import "./App.css";
 
 interface Robot {
@@ -36,16 +35,17 @@ const App: React.FC = () => {
   const [robotId, setRobotId] = useState<string>("");
   const [robotName, setRobotName] = useState<string>("");
   const [score, setScore] = useState<number>(0);
-  const [time, setTime] = useState<number>(0);
   const [startclicked, setStartclicked] = useState<boolean>(false);
   const [isReadyClicked, setIsReadyClicked] = useState<boolean>(false);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
   const [robotNames, setRobotNames] = useState<string[]>([]);
   const [disqualifiedRobots, setDisqualifiedRobots] = useState<string[]>([]);
-  const [showDisqualifyModal, setShowDisqualifyModal] =
-    useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(10);
   const [robotsCache, setRobotsCache] = useState<RobotsCache>({});
+  const [resetMap, setResetMap] = useState<boolean>(false);
+  const [stopwatch, setStopwatch] = useState<number>(0);
+  const [isStopwatchRunning, setIsStopwatchRunning] = useState<boolean>(false);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,14 +59,6 @@ const App: React.FC = () => {
           );
           console.log("Robot names:", robotNames);
           setRobotNames(robotNames);
-          if (Object.keys(data).length > 0) {
-            const firstRobotId = Object.keys(data)[0];
-            const firstRobot = data[firstRobotId];
-            setRobotId(firstRobotId);
-            setRobotName(firstRobot.name || "Unnamed Robot");
-            setScore(firstRobot.score);
-            setTime(firstRobot.time);
-          }
         } catch (error) {
           console.error("Error fetching robots:", error);
         }
@@ -91,64 +83,84 @@ const App: React.FC = () => {
     setRobotId(randomRobotId);
     setRobotName(robot.name || "Unnamed Robot");
     setScore(robot.score);
-    setTime(robot.time);
+    setStopwatch(robot.time || 0);
+    setResetMap(true);
   };
 
   const startReadyCountdown = () => {
     setIsReadyClicked(true);
-    setCountdown(10);
-    const interval = setInterval(() => {
+    setCountdown(120000);
+    countdownIntervalRef.current = setInterval(() => {
       setCountdown((prevCountdown) => {
-        if (prevCountdown <= 1) {
-          clearInterval(interval);
+        if (prevCountdown <= 100) {
+          clearInterval(countdownIntervalRef.current!);
           disqualifyRobot();
           return 0;
         }
-        return prevCountdown - 1;
+        return prevCountdown - 100;
       });
-    }, 1000);
-    setTimer(interval);
+    }, 100);
   };
 
   const startChallenge = () => {
     setStartclicked(true);
     setIsReadyClicked(false);
+    setIsStopwatchRunning(true);
     if (timer) {
       clearInterval(timer);
     }
+  };
+
+  const disqualifyRobot = () => {
+    setIsStopwatchRunning(false);
+    Swal.fire({
+      title: `${robotName} :La3nat el suiveur 3alaykom!`,
+      showDenyButton: true,
+      confirmButtonText: "Next",
+      denyButtonText: "Retry",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleNext();
+      } else if (result.isDenied) {
+        handleRetry();
+      }
+    });
   };
 
   const updateScore = (score: number, newScore: number) => {
     setScore(score + newScore);
   };
 
-  const disqualifyRobot = () => {
-    setDisqualifiedRobots([...disqualifiedRobots, robotName]);
-    setShowDisqualifyModal(true);
-  };
-
   const handleRetry = () => {
-    setShowDisqualifyModal(false);
+    setIsStopwatchRunning(false);
+    setStopwatch(0);
   };
 
   const handleNext = () => {
-    setShowDisqualifyModal(false);
+    setDisqualifiedRobots([...disqualifiedRobots, robotName]);
     chooseRandomRobot();
+    setStartclicked(false);
+    setIsReadyClicked(false);
   };
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+    const remainingMilliseconds = milliseconds % 1000;
+
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, "0")}.${remainingMilliseconds.toString().padStart(3, "0")}`;
   };
 
   return (
     <div>
       <h1>Robot Challenge</h1>
       <div>
-        <button onClick={chooseRandomRobot}>Choose Robot</button>
+        {!robotName && (
+          <button onClick={chooseRandomRobot}>Choose Robot</button>
+        )}
         {robotName && (
           <div>
             <button onClick={startReadyCountdown}>Ready</button>
@@ -162,16 +174,14 @@ const App: React.FC = () => {
         robotId={robotId}
         robotName={robotName}
         score={score}
-        time={time}
         update={updateScore}
+        resetMap={resetMap}
+        onResetComplete={() => setResetMap(false)}
+        stopwatch={stopwatch}
+        setStopwatch={setStopwatch}
+        isStopwatchRunning={isStopwatchRunning}
+        formatTime={formatTime}
       />
-      {showDisqualifyModal && (
-        <div className="modal">
-          <p>Robot {robotName} has been disqualified.</p>
-          <button onClick={handleRetry}>Retry</button>
-          <button onClick={handleNext}>Next</button>
-        </div>
-      )}
     </div>
   );
 };

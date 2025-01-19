@@ -1,4 +1,4 @@
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config({ path: "../../.env" });
 const { writeApi, Point } = require("../utils/influxConfig.js");
 const { v4: uuidv4 } = require("uuid");
 

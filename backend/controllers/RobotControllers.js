@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const robotModel = require("../models/robotModel");
 const { emitUpdate } = require("../sockets");
 
@@ -44,4 +46,32 @@ exports.updateRobotDetails = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+exports.saveRobot = async (req, res) => {
+  const robot = req.body;
+  const filePath = path.join(__dirname, "..", "data", "robots.json");
+
+  fs.readFile(filePath, "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error reading file");
+    }
+
+    let robots = [];
+    if (data) {
+      robots = JSON.parse(data);
+    }
+
+    robots.push(robot);
+
+    fs.writeFile(filePath, JSON.stringify(robots, null, 2), (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Error writing file");
+      }
+
+      res.status(200).send("Robot saved successfully");
+    });
+  });
 };

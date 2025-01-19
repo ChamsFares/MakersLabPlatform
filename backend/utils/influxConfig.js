@@ -1,5 +1,4 @@
-require("dotenv").config();
-
+require("dotenv").config({ path: "../.env" });
 const { InfluxDB, Point } = require("@influxdata/influxdb-client");
 
 console.log("INFLUX_URL:", process.env.INFLUXDB_URL);

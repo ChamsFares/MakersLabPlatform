@@ -2,7 +2,7 @@ const { format } = require("path");
 const { queryApi, bucket } = require("../utils/influxConfig");
 
 exports.Leaderboard = async () => {
-  const query = `from(bucket: "${bucket}") |> range(start: -5d) 
+  const query = `from(bucket: "${bucket}") |> range(start: -20d) 
   |> filter(fn: (r) => r._measurement == "competetiontest2")
   |> filter(fn: (r) => r._field == "name" or r._field == "score" or r._field == "tempfinale")
   |> group(columns: ["robot_ID", "_field"])`;
