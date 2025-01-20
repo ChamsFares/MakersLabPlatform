@@ -2,6 +2,17 @@ const path = require("path");
 const fs = require("fs");
 const robotModel = require("../models/robotModel");
 const { emitUpdate } = require("../sockets");
+const exp = require("constants");
+
+exports.getRobots = async (req, res) => {
+  try {
+    const robots = await robotModel.getRobots();
+    res.json(robots);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching robots" });
+  }
+};
 
 exports.getRobotDetails = async (req, res) => {
   try {
@@ -49,7 +60,7 @@ exports.updateRobotDetails = async (req, res) => {
 };
 
 exports.saveRobot = async (req, res) => {
-  const robot = req.body;
+  const { robot, round } = req.body;
   const filePath = path.join(__dirname, "..", "data", "robots.json");
 
   fs.readFile(filePath, "utf8", (err, data) => {
@@ -58,14 +69,20 @@ exports.saveRobot = async (req, res) => {
       return res.status(500).send("Error reading file");
     }
 
-    let robots = [];
+    let robotsData = { roundOne: [], roundTwo: [] };
     if (data) {
-      robots = JSON.parse(data);
+      robotsData = JSON.parse(data);
     }
 
-    robots.push(robot);
+    if (round === "roundOne") {
+      robotsData.roundOne.push(robot);
+    } else if (round === "roundTwo") {
+      robotsData.roundTwo.push(robot);
+    } else {
+      return res.status(400).send("Invalid round specified");
+    }
 
-    fs.writeFile(filePath, JSON.stringify(robots, null, 2), (err) => {
+    fs.writeFile(filePath, JSON.stringify(robotsData, null, 2), (err) => {
       if (err) {
         console.error(err);
         return res.status(500).send("Error writing file");

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { navigate } from "@reach/router";
 import Map from "./components/Map";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -46,6 +47,7 @@ const App: React.FC = () => {
   const [stopwatch, setStopwatch] = useState<number>(0);
   const [isStopwatchRunning, setIsStopwatchRunning] = useState<boolean>(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const completedOrDisqualifiedRobotsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,7 +140,12 @@ const App: React.FC = () => {
 
   const handleNext = () => {
     setDisqualifiedRobots([...disqualifiedRobots, robotName]);
-    chooseRandomRobot();
+    completedOrDisqualifiedRobotsRef.current.add(robotId);
+    if (disqualifiedRobots.length === Object.keys(robotsCache).length) {
+      navigate("/leaderboard");
+    } else {
+      chooseRandomRobot();
+    }
     setStartclicked(false);
     setIsReadyClicked(false);
   };
