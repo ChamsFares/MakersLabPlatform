@@ -35,6 +35,7 @@ interface MapProps {
   setStopwatch: React.Dispatch<React.SetStateAction<number>>;
   isStopwatchRunning: boolean;
   formatTime: (milliseconds: number) => string;
+  completedOrDisqualifiedRobotsRef: React.MutableRefObject<Set<string>>;
 }
 
 const Map: React.FC<MapProps> = ({
@@ -48,6 +49,7 @@ const Map: React.FC<MapProps> = ({
   setStopwatch,
   isStopwatchRunning,
   formatTime,
+  completedOrDisqualifiedRobotsRef,
 }) => {
   const challengesCompletedRef = useRef<boolean[]>([
     false,
@@ -81,11 +83,13 @@ const Map: React.FC<MapProps> = ({
       text: "Your score is " + score,
       timer: 450,
       backdrop: false,
-      okButtonText: false,
+      showConfirmButton: false,
       didOpen: () => {
         const timer = Swal.getPopup()?.querySelector("b");
         setInterval(() => {
-          timer.textContent = `${Swal.getTimerLeft()}`;
+          if (timer) {
+            timer.textContent = `${Swal.getTimerLeft()}`;
+          }
         }, 100);
       },
       willClose: () => {
@@ -138,6 +142,7 @@ const Map: React.FC<MapProps> = ({
         banner(data.fin);
         setImg(fin);
         update(score, data.fin);
+        completedOrDisqualifiedRobotsRef.current.add(robotId);
       }
     });
 

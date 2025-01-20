@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { navigate } from "@reach/router";
 import Map from "./components/Map";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
 
 interface Robot {
@@ -32,7 +32,7 @@ const fetchRobots = async (): Promise<RobotsCache> => {
   return response.data;
 };
 
-const App: React.FC = () => {
+const App: React.FC = (): JSX.Element => {
   const [robotId, setRobotId] = useState<string>("");
   const [robotName, setRobotName] = useState<string>("");
   const [score, setScore] = useState<number>(0);
@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const [isStopwatchRunning, setIsStopwatchRunning] = useState<boolean>(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const completedOrDisqualifiedRobotsRef = useRef<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,16 +73,12 @@ const App: React.FC = () => {
 
   const chooseRandomRobot = () => {
     const availableRobots = Object.keys(robotsCache).filter(
-      (robotId) => !disqualifiedRobots.includes(robotsCache[robotId].name)
+      (robotId) => !completedOrDisqualifiedRobotsRef.current.has(robotId)
     );
-    if (availableRobots.length === 0) {
-      alert("No more robots available");
-      return;
-    }
+
     const randomIndex = Math.floor(Math.random() * availableRobots.length);
     const randomRobotId = availableRobots[randomIndex];
     const robot = robotsCache[randomRobotId];
-
     setRobotId(randomRobotId);
     setRobotName(robot.name || "Unnamed Robot");
     setScore(robot.score);
@@ -120,12 +117,46 @@ const App: React.FC = () => {
       showDenyButton: true,
       confirmButtonText: "Next",
       denyButtonText: "Retry",
-    }).then((result) => {
-      if (result.isConfirmed) {
+      background: "linear-gradient(#C77700, #FFDD00)",
+      preConfirm: () => {
         handleNext();
-      } else if (result.isDenied) {
+      },
+      preDeny: () => {
         handleRetry();
-      }
+      },
+      didOpen: () => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+          if (event.key === "Enter") {
+            Swal.clickConfirm();
+          } else if (event.key === "Escape") {
+            Swal.clickDeny();
+          }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        Swal.getPopup()?.addEventListener("keydown", handleKeyDown);
+
+        Swal.getPopup()?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            Swal.clickConfirm();
+          } else if (event.key === "Escape") {
+            Swal.clickDeny();
+          }
+        });
+
+        Swal.getPopup()?.addEventListener("keydown", handleKeyDown);
+      },
+      willClose: () => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+          if (event.key === "Enter") {
+            Swal.clickConfirm();
+          } else if (event.key === "Escape") {
+            Swal.clickDeny();
+          }
+        };
+        window.removeEventListener("keydown", handleKeyDown);
+      },
     });
   };
 
@@ -155,27 +186,45 @@ const App: React.FC = () => {
     const minutes = Math.floor(totalSeconds / 60);
     const remainingSeconds = totalSeconds % 60;
     const remainingMilliseconds = milliseconds % 1000;
-
     return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
       .toString()
       .padStart(2, "0")}.${remainingMilliseconds.toString().padStart(3, "0")}`;
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "r":
+          startReadyCountdown();
+          break;
+        case "s":
+          startChallenge();
+          break;
+        case "d":
+          disqualifyRobot();
+          break;
+        case "c":
+          chooseRandomRobot();
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
     <div>
       <h1>Robot Challenge</h1>
       <div>
-        {!robotName && (
-          <button onClick={chooseRandomRobot}>Choose Robot</button>
-        )}
         {robotName && (
           <div>
-            <button onClick={startReadyCountdown}>Ready</button>
             {isReadyClicked && <p>Countdown: {formatTime(countdown)}</p>}
-            <button onClick={startChallenge}>Start</button>
           </div>
         )}
-        {startclicked && <button onClick={disqualifyRobot}>Disqualify</button>}
       </div>
       <Map
         robotId={robotId}
@@ -188,6 +237,7 @@ const App: React.FC = () => {
         setStopwatch={setStopwatch}
         isStopwatchRunning={isStopwatchRunning}
         formatTime={formatTime}
+        completedOrDisqualifiedRobotsRef={completedOrDisqualifiedRobotsRef}
       />
     </div>
   );
