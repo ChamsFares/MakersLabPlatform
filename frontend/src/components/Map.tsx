@@ -7,9 +7,9 @@ import challenge4img from "../assets/challengesImgs/challenge4.png";
 import challenge5img from "../assets/challengesImgs/challenge5.png";
 import fin from "../assets/challengesImgs/fin.png";
 import io from "socket.io-client";
-import Test from "../Test";
 import Swal from "sweetalert2";
 import "../App.css";
+import Test from "../Test";
 
 interface Robot {
   id: string;
@@ -35,6 +35,7 @@ interface MapProps {
   setStopwatch: React.Dispatch<React.SetStateAction<number>>;
   isStopwatchRunning: boolean;
   formatTime: (milliseconds: number) => string;
+  completedOrDisqualifiedRobotsRef: React.MutableRefObject<Set<string>>;
 }
 
 const Map: React.FC<MapProps> = ({
@@ -48,6 +49,7 @@ const Map: React.FC<MapProps> = ({
   setStopwatch,
   isStopwatchRunning,
   formatTime,
+  completedOrDisqualifiedRobotsRef,
 }) => {
   const challengesCompletedRef = useRef<boolean[]>([
     false,
@@ -55,38 +57,34 @@ const Map: React.FC<MapProps> = ({
     false,
     false,
     false,
-    false,
   ]);
   const [img, setImg] = useState<string>(Defaultimg);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  const webSocketRef = useRef<WebSocket | null>(null);
   const stopwatchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (resetMap) {
-      challengesCompletedRef.current = [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-      ];
+      challengesCompletedRef.current = [false, false, false, false, false];
       setImg(Defaultimg);
       onResetComplete();
     }
   }, [resetMap, onResetComplete]);
+
   const banner = (score: number) => {
     Swal.fire({
-      title: "challange completed",
+      title: "Challenge completed",
       text: "Your score is " + score,
       timer: 450,
       backdrop: false,
-      okButtonText: false,
+      showConfirmButton: false,
+      background: "linear-gradient(#C77700, #FFDD00)",
       didOpen: () => {
         const timer = Swal.getPopup()?.querySelector("b");
-        setInterval(() => {
-          timer.textContent = `${Swal.getTimerLeft()}`;
-        }, 100);
+        if (timer) {
+          setInterval(() => {
+            timer.textContent = `${Swal.getTimerLeft()}`;
+          }, 100);
+        }
       },
       willClose: () => {
         clearInterval(0);
@@ -95,14 +93,39 @@ const Map: React.FC<MapProps> = ({
   };
 
   useEffect(() => {
+    const socket = new WebSocket("ws://localhost:3000");
+
+    socket.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+
+    socket.onclose = () => {
+      webSocketRef.current = socket;
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (webSocketRef.current && robotId) {
+      webSocketRef.current.send(
+        JSON.stringify({ type: "frontend", id: robotId })
+      );
+      console.log(`Sent robotId ${robotId} to ESP32`);
+    }
+  }, [robotId]);
+
+  useEffect(() => {
     const socket = io("http://localhost:3000");
-    socketRef.current = socket;
     socket.on("connect", () => {
       console.log("Connected to Socket.IO server");
     });
 
     socket.on("robotDetails", (data: Robot) => {
       console.log("Received robot details:", data);
+
       if (data.challenge1 > 0 && !challengesCompletedRef.current[0]) {
         challengesCompletedRef.current[0] = true;
         banner(data.challenge1);
@@ -138,6 +161,7 @@ const Map: React.FC<MapProps> = ({
         banner(data.fin);
         setImg(fin);
         update(score, data.fin);
+        completedOrDisqualifiedRobotsRef.current.add(robotId);
       }
     });
 
@@ -179,11 +203,12 @@ const Map: React.FC<MapProps> = ({
       <h2>Map</h2>
       <p>Robot Name: {robotName}</p>
       <p>Score: {score}</p>
-      <p>Time: {formatTime(stopwatch)}</p>
+      <p>Time: {stopwatch}</p>
+      <p>Stopwatch: {formatTime(stopwatch)}</p>
       <img src={img} alt="Challenge" className="img" />
       <Test robotId={robotId} />
     </div>
   );
 };
 
-export default React.memo(Map);
+export default Map;
