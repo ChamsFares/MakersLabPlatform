@@ -1,9 +1,16 @@
-const { writeApi, queryApi, bucket, Point } = require("../utils/influxConfig");
+const {
+  writeApi,
+  queryApi,
+  bucket,
+  measurement,
+  Point,
+} = require("../utils/influxConfig");
 
 exports.getRobots = async () => {
-  const query = `from(bucket: "${bucket}") |> range(start: -20d) 
-  |> filter(fn: (r) => r._measurement == "competetiontest2")
-  |> filter(fn: (r) => r._field == "name" or r._field == "score" or r._field == "tempfinale")
+  const query = `from(bucket: "${bucket}") 
+  |> range(start: -3d) 
+  |> filter(fn: (r) => r._measurement == "${measurement}")
+  |> filter(fn: (r) => r._field == "leader_name"or r._field == "robot_name" or r._field == "score" or r._field == "tempfinale")
   |> group(columns: ["robot_ID", "_field"])`;
 
   const result = {};
@@ -31,9 +38,10 @@ exports.getRobots = async () => {
 
 exports.getRobotById = async (id) => {
   const query = `from(bucket: "${bucket}") 
-  |> range(start: -1s) 
-  |> filter(fn: (r) => r._measurement == "competetiontest2" and r.robot_ID == "${id}")
-  |> group(columns: ["_field", "_value"])`;
+  |> range(start: -1s)
+  |> filter(fn: (r) => r._measurement == "${measurement}" and r.robot_ID == "${id}")
+  |> filter(fn: (r) => r._field == "score" or r._field == "challenge1" or r._field == "challenge2" or r._field == "challenge3" or r._field == "challenge4" or r._field == "challenge5" or r._field == "fin" or r._field == "disqualified" or r._field == "tempfinale")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")`;
 
   const result = {};
 
@@ -42,7 +50,7 @@ exports.getRobotById = async (id) => {
       next(row, tableMeta) {
         const rowObject = tableMeta.toObject(row);
         console.log("Row Object:", rowObject);
-        result[rowObject._field] = rowObject._value;
+        Object.assign(result, rowObject);
       },
       error(error) {
         console.error("Query Error:", error);
@@ -54,25 +62,4 @@ exports.getRobotById = async (id) => {
       },
     });
   });
-};
-
-exports.updateRobotById = async (id, data) => {
-  try {
-    const point = new Point("competetiontest2")
-      .tag("robot_ID", id)
-      .intField("debut", parseInt(data.deb))
-      .intField("challenge1", parseInt(data.challenge1))
-      .intField("challenge2", parseInt(data.challenge2))
-      .intField("challenge3", parseInt(data.challenge3))
-      .intField("challenge4", parseInt(data.challenge4))
-      .intField("challenge5", parseInt(data.challenge5))
-      .intField("fin", parseInt(data.fin))
-      .timestamp(new Date());
-
-    writeApi.writePoint(point);
-    await writeApi.flush();
-    console.log(`Robot data for ${id} updated successfully.`);
-  } catch (error) {
-    console.error(`Error updating robot data for ${id}:`, error);
-  }
 };

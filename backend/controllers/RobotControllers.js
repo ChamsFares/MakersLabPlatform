@@ -27,41 +27,18 @@ exports.getRobotDetails = async (req, res) => {
   }
 };
 
-exports.updateRobotDetails = async (req, res) => {
-  const { id } = req.params;
-  const {
-    deb,
-    challenge1,
-    challenge2,
-    challenge3,
-    challenge4,
-    challenge5,
-    fin,
-  } = req.query;
-
-  const data = {
-    deb: parseInt(deb),
-    challenge1: parseInt(challenge1),
-    challenge2: parseInt(challenge2, 10),
-    challenge3: parseInt(challenge3, 10),
-    challenge4: parseInt(challenge4, 10),
-    challenge5: parseInt(challenge5, 10),
-    fin: parseInt(fin, 10),
-  };
-
-  try {
-    await robotModel.updateRobotById(id, data);
-    emitUpdate("robotUpdate", { ...data });
-    res.json({ message: "Robot updated" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 exports.saveRobot = async (req, res) => {
-  const { robot, round } = req.body;
-  const filePath = path.join(__dirname, "..", "data", "robots.json");
+  const {
+    id,
+    leaderName,
+    robotName,
+    score,
+    time,
+    homePoints,
+    disqualified,
+    rounds,
+  } = req.body;
+  const filePath = path.join(__dirname, "..", "data", "SavedRobots.json");
 
   fs.readFile(filePath, "utf8", (err, data) => {
     if (err) {
@@ -74,9 +51,19 @@ exports.saveRobot = async (req, res) => {
       robotsData = JSON.parse(data);
     }
 
-    if (round === "roundOne") {
+    const robot = {
+      id,
+      leaderName,
+      robotName,
+      score,
+      time,
+      homePoints,
+      disqualified,
+    };
+
+    if (rounds === "roundOne") {
       robotsData.roundOne.push(robot);
-    } else if (round === "roundTwo") {
+    } else if (rounds === "roundTwo") {
       robotsData.roundTwo.push(robot);
     } else {
       return res.status(400).send("Invalid round specified");

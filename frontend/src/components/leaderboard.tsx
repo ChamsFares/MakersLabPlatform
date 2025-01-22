@@ -1,27 +1,75 @@
-import React from "react";
+import axios from "axios";
+import React, { useEffect } from "react";
 
 interface Robot {
-  id: string;
-  name: string;
-  score: number;
-  time: number;
+  robotId: number;
+  leader_name: string;
+  robot_name: string;
+  Max_Points: number;
+  Time: number;
+  TotalHomPoint: number;
 }
 
 interface LeaderboardProps {
-  robots: { [key: string]: Robot };
+  formatTime: (milliseconds: number) => string;
 }
 
-const Leaderboard: React.FC<LeaderboardProps> = ({ robots }) => {
-  const sortByScoreAndTime = (data: Robot[]) => {
-    return data.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return a.time - b.time;
-    });
-  };
+const fetchRobots = async () => {
+  const response = await axios("localhost:3000/api/leaderboard");
+  return await response.data;
+};
 
-  const sortedRobots = sortByScoreAndTime(Object.values(robots));
+const Leaderboard: React.FC<LeaderboardProps> = ({ formatTime }) => {
+  const [robotsRoundOne, setRobotsRoundOne] = React.useState<Robot[]>([]);
+  const [robotsRoundTwo, setRobotsRoundTwo] = React.useState<Robot[]>([]);
+  const [sortedRobots, setSortedRobots] = React.useState<Robot[]>([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchRobots();
+      setRobotsRoundOne(data.roundOne);
+      setRobotsRoundTwo(data.roundTwo);
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const combinedRobots = robotsRoundOne.map((robot, index) => {
+      const roundTwoRobot = robotsRoundTwo[index];
+      return {
+        ...robot,
+        Max_Points: Math.max(robot.Max_Points, roundTwoRobot.Max_Points),
+        Time: Math.min(robot.Time, roundTwoRobot.Time),
+        TotalHomPoint: Math.max(
+          robot.TotalHomPoint,
+          roundTwoRobot.TotalHomPoint
+        ),
+      };
+    });
+
+    const sortedRobots = combinedRobots.sort((a, b) => {
+      if (a.Max_Points > b.Max_Points) {
+        return -1;
+      } else if (a.Max_Points < b.Max_Points) {
+        return 1;
+      } else {
+        if (a.Time < b.Time) {
+          return -1;
+        } else if (a.Time > b.Time) {
+          return 1;
+        } else {
+          if (a.TotalHomPoint > b.TotalHomPoint) {
+            return -1;
+          } else if (a.TotalHomPoint < b.TotalHomPoint) {
+            return 1;
+          } else {
+            return 0;
+          }
+        }
+      }
+    });
+
+    setSortedRobots(sortedRobots);
+  }, [robotsRoundOne, robotsRoundTwo]);
 
   return (
     <div>
@@ -30,17 +78,23 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ robots }) => {
       <table>
         <thead>
           <tr>
+            <th>Rank</th>
+            <th>Leader</th>
             <th>Name</th>
             <th>Score</th>
             <th>Time</th>
+            <th>HomPoints</th>
           </tr>
         </thead>
         <tbody>
           {sortedRobots.map((robot) => (
-            <tr key={robot.id}>
-              <td>{robot.name}</td>
-              <td>{robot.score}</td>
-              <td>{robot.time}</td>
+            <tr key={robot.robotId}>
+              <td>{sortedRobots.indexOf(robot) + 1}</td>
+              <td>{robot.leader_name}</td>
+              <td>{robot.robot_name}</td>
+              <td>{robot.Max_Points}</td>
+              <td>{formatTime(robot.Time)}</td>
+              <td>{robot.TotalHomPoint}</td>
             </tr>
           ))}
         </tbody>

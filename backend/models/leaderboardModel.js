@@ -1,10 +1,8 @@
-const { format } = require("path");
-const { queryApi, bucket } = require("../utils/influxConfig");
 const fs = require("fs");
 const path = require("path");
 
 exports.Leaderboard = async () => {
-  const filePath = path.join(__dirname, "../data/leaderboard.json");
+  const filePath = path.join(__dirname, "../data/SavedRobots.json");
 
   return new Promise((resolve, reject) => {
     fs.readFile(filePath, "utf8", (err, data) => {

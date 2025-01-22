@@ -7,6 +7,5 @@ router.get("/", robotController.getRobots);
 router.post("/saveRobot", robotController.saveRobot);
 router.get("/leaderboard", leaderboardController.getLeaderboard);
 router.get("/:id", robotController.getRobotDetails);
-router.put("/:id/update", robotController.updateRobotDetails);
 
 module.exports = router;

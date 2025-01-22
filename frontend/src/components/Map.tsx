@@ -6,14 +6,14 @@ import challenge3img from "../assets/challengesImgs/challenge3.png";
 import challenge4img from "../assets/challengesImgs/challenge4.png";
 import challenge5img from "../assets/challengesImgs/challenge5.png";
 import fin from "../assets/challengesImgs/fin.png";
+import lineFollower from "../assets/Istic_Robots_2.0_line_follower_icon.png";
 import io from "socket.io-client";
-import Test from "../Test";
 import Swal from "sweetalert2";
 import "../App.css";
+import axios from "axios";
 
 interface Robot {
-  id: string;
-  name: string;
+  id: number;
   score: number;
   time: number;
   challenge1: number;
@@ -22,13 +22,17 @@ interface Robot {
   challenge4: number;
   challenge5: number;
   fin: number;
+  disqualified: number;
 }
 
 interface MapProps {
   robotId: string;
+  leaderName: string;
   robotName: string;
   score: number;
-  update: (score: number, increment: number) => void;
+  homePoints: number;
+  rounds: string;
+  update: (score: number) => void;
   resetMap: boolean;
   onResetComplete: () => void;
   stopwatch: number;
@@ -36,13 +40,17 @@ interface MapProps {
   isStopwatchRunning: boolean;
   formatTime: (milliseconds: number) => string;
   completedOrDisqualifiedRobotsRef: React.MutableRefObject<Set<string>>;
+  disqualified: () => void;
 }
 
 const Map: React.FC<MapProps> = ({
   robotId,
+  leaderName,
   robotName,
   score,
+  homePoints,
   update,
+  rounds,
   resetMap,
   onResetComplete,
   stopwatch,
@@ -50,6 +58,7 @@ const Map: React.FC<MapProps> = ({
   isStopwatchRunning,
   formatTime,
   completedOrDisqualifiedRobotsRef,
+  disqualified,
 }) => {
   const challengesCompletedRef = useRef<boolean[]>([
     false,
@@ -62,6 +71,19 @@ const Map: React.FC<MapProps> = ({
   const [img, setImg] = useState<string>(Defaultimg);
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
   const stopwatchIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const sendRobotDetails = async (data: Robot) => {
+    axios.post("http://localhost:3000/api/saveRobot", {
+      id: data.id,
+      leaderName: leaderName,
+      robotName: robotName,
+      score: data.score,
+      time: data.time,
+      homePoints: homePoints,
+      disqualified: data.disqualified,
+      rounds: rounds,
+    });
+  };
 
   useEffect(() => {
     if (resetMap) {
@@ -77,10 +99,9 @@ const Map: React.FC<MapProps> = ({
       onResetComplete();
     }
   }, [resetMap, onResetComplete]);
-  const banner = (score: number) => {
+  const banner = (challangeName: string) => {
     Swal.fire({
-      title: "challange completed",
-      text: "Your score is " + score,
+      title: `${challangeName}challange completed`,
       timer: 450,
       backdrop: false,
       showConfirmButton: false,
@@ -107,42 +128,48 @@ const Map: React.FC<MapProps> = ({
 
     socket.on("robotDetails", (data: Robot) => {
       console.log("Received robot details:", data);
+      if (data.disqualified === 1) {
+        disqualified();
+        completedOrDisqualifiedRobotsRef.current.add(robotId);
+        sendRobotDetails(data);
+      }
       if (data.challenge1 > 0 && !challengesCompletedRef.current[0]) {
         challengesCompletedRef.current[0] = true;
-        banner(data.challenge1);
+        banner("l'oeil de cléopatre");
         setImg(challenge1img);
-        update(score, data.challenge1);
+        update(data.score);
       }
       if (data.challenge2 > 0 && !challengesCompletedRef.current[1]) {
         challengesCompletedRef.current[1] = true;
-        banner(data.challenge2);
+        banner("les mistère d'Anubis");
         setImg(challenge2img);
-        update(score, data.challenge2);
+        update(data.score);
       }
       if (data.challenge3 > 0 && !challengesCompletedRef.current[2]) {
         challengesCompletedRef.current[2] = true;
-        banner(data.challenge3);
+        banner("le repo éternel de la momie");
         setImg(challenge3img);
-        update(score, data.challenge3);
+        update(data.score);
       }
       if (data.challenge4 > 0 && !challengesCompletedRef.current[3]) {
         challengesCompletedRef.current[3] = true;
-        banner(data.challenge4);
+        banner(" les alies du soleil divin");
         setImg(challenge4img);
-        update(score, data.challenge4);
+        update(data.score);
       }
       if (data.challenge5 > 0 && !challengesCompletedRef.current[4]) {
         challengesCompletedRef.current[4] = true;
-        banner(data.challenge5);
+        banner("le gardien sacré de scarabée");
         setImg(challenge5img);
-        update(score, data.challenge5);
+        update(data.score);
       }
       if (data.fin > 0 && !challengesCompletedRef.current[5]) {
         challengesCompletedRef.current[5] = true;
-        banner(data.fin);
+        banner("le triomphe au sommet de la pyramide");
         setImg(fin);
-        update(score, data.fin);
+        update(data.score);
         completedOrDisqualifiedRobotsRef.current.add(robotId);
+        sendRobotDetails(data);
       }
     });
 
@@ -181,12 +208,13 @@ const Map: React.FC<MapProps> = ({
 
   return (
     <div>
-      <h2>Map</h2>
-      <p>Robot Name: {robotName}</p>
-      <p>Score: {score}</p>
-      <p>Time: {formatTime(stopwatch)}</p>
+      <div>
+        <img src={lineFollower}></img>
+        <p>Robot Name: {robotName}</p>
+        <p>Score: {score}</p>
+        <p>Time: {formatTime(stopwatch)}</p>
+      </div>
       <img src={img} alt="Challenge" className="img" />
-      <Test robotId={robotId} />
     </div>
   );
 };

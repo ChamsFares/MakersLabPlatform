@@ -2,14 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import Map from "./components/Map";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
 import "./App.css";
+import logo from "./assets/Istic_Robots_2.0.png";
+import Leaderboard from "./components/leaderboard";
 
 interface Robot {
-  id: string;
-  name: string;
-  score: number;
-  time: number;
+  robotId: number;
+  leader_name: string;
+  robot_name: string;
+  Max_Points: number;
+  Time: number;
+  TotalHomPoint: number;
 }
 
 interface RobotsCache {
@@ -34,13 +37,13 @@ const fetchRobots = async (): Promise<RobotsCache> => {
 
 const App: React.FC = (): JSX.Element => {
   const [robotId, setRobotId] = useState<string>("");
+  const [leaderName, setLeaderName] = useState<string>("");
   const [robotName, setRobotName] = useState<string>("");
   const [score, setScore] = useState<number>(0);
+  const [TotalHomPoint, setTotalHomPoint] = useState<number>(0);
   const [startclicked, setStartclicked] = useState<boolean>(false);
   const [isReadyClicked, setIsReadyClicked] = useState<boolean>(false);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [robotNames, setRobotNames] = useState<string[]>([]);
-  const [disqualifiedRobots, setDisqualifiedRobots] = useState<string[]>([]);
   const [countdown, setCountdown] = useState<number>(10);
   const [robotsCache, setRobotsCache] = useState<RobotsCache>({});
   const [resetMap, setResetMap] = useState<boolean>(false);
@@ -48,7 +51,7 @@ const App: React.FC = (): JSX.Element => {
   const [isStopwatchRunning, setIsStopwatchRunning] = useState<boolean>(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const completedOrDisqualifiedRobotsRef = useRef<Set<string>>(new Set());
-  const navigate = useNavigate();
+  const [rounds, setRounds] = useState<string>("roundOne");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,11 +60,6 @@ const App: React.FC = (): JSX.Element => {
           const data = await fetchRobots();
           console.log("Fetched robots:", data);
           setRobotsCache(data);
-          const robotNames = Object.values(data).map(
-            (robot) => robot.name || "Unnamed Robot"
-          );
-          console.log("Robot names:", robotNames);
-          setRobotNames(robotNames);
         } catch (error) {
           console.error("Error fetching robots:", error);
         }
@@ -71,19 +69,20 @@ const App: React.FC = (): JSX.Element => {
     fetchData();
   }, [robotsCache, robotId]);
 
-  const chooseRandomRobot = () => {
+  const chooseRobot = () => {
     const availableRobots = Object.keys(robotsCache).filter(
       (robotId) => !completedOrDisqualifiedRobotsRef.current.has(robotId)
     );
-
-    const randomIndex = Math.floor(Math.random() * availableRobots.length);
-    const randomRobotId = availableRobots[randomIndex];
-    const robot = robotsCache[randomRobotId];
-    setRobotId(randomRobotId);
-    setRobotName(robot.name || "Unnamed Robot");
-    setScore(robot.score);
-    setStopwatch(robot.time || 0);
-    setResetMap(true);
+    if (availableRobots.length > 0) {
+      const robotId = availableRobots[0];
+      const robot = robotsCache[robotId];
+      setRobotId(robotId);
+      setLeaderName(robot.leader_name);
+      setRobotName(robot.robot_name);
+      setScore(robot.Max_Points);
+      setStopwatch(robot.Time);
+      setTotalHomPoint(robot.TotalHomPoint);
+    }
   };
 
   const startReadyCountdown = () => {
@@ -121,9 +120,6 @@ const App: React.FC = (): JSX.Element => {
       preConfirm: () => {
         handleNext();
       },
-      preDeny: () => {
-        handleRetry();
-      },
       didOpen: () => {
         const handleKeyDown = (event: KeyboardEvent) => {
           if (event.key === "Enter") {
@@ -151,8 +147,6 @@ const App: React.FC = (): JSX.Element => {
         const handleKeyDown = (event: KeyboardEvent) => {
           if (event.key === "Enter") {
             Swal.clickConfirm();
-          } else if (event.key === "Escape") {
-            Swal.clickDeny();
           }
         };
         window.removeEventListener("keydown", handleKeyDown);
@@ -160,22 +154,31 @@ const App: React.FC = (): JSX.Element => {
     });
   };
 
-  const updateScore = (score: number, newScore: number) => {
-    setScore(score + newScore);
-  };
-
-  const handleRetry = () => {
-    setIsStopwatchRunning(false);
-    setStopwatch(0);
+  const updateScore = (score: number) => {
+    setScore(score);
   };
 
   const handleNext = () => {
-    setDisqualifiedRobots([...disqualifiedRobots, robotName]);
     completedOrDisqualifiedRobotsRef.current.add(robotId);
-    if (disqualifiedRobots.length === Object.keys(robotsCache).length) {
-      navigate("/leaderboard");
+    if (
+      completedOrDisqualifiedRobotsRef.current.size ===
+      Object.keys(robotsCache).length
+    ) {
+      setRounds("roundTwo");
+      setRobotId("");
+      setRobotName("");
+      setScore(0);
+      setTotalHomPoint(0);
+      setStartclicked(false);
+      setIsReadyClicked(false);
+      setTimer(null);
+      setCountdown(10);
+      setResetMap(true);
+      setStopwatch(0);
+      setIsStopwatchRunning(false);
+      completedOrDisqualifiedRobotsRef.current.clear();
     } else {
-      chooseRandomRobot();
+      chooseRobot();
     }
     setStartclicked(false);
     setIsReadyClicked(false);
@@ -200,11 +203,8 @@ const App: React.FC = (): JSX.Element => {
         case "s":
           startChallenge();
           break;
-        case "d":
-          disqualifyRobot();
-          break;
         case "c":
-          chooseRandomRobot();
+          chooseRobot();
           break;
         default:
           break;
@@ -218,7 +218,7 @@ const App: React.FC = (): JSX.Element => {
 
   return (
     <div>
-      <h1>Robot Challenge</h1>
+      <img src={logo} className="img" />
       <div>
         {robotName && (
           <div>
@@ -226,19 +226,29 @@ const App: React.FC = (): JSX.Element => {
           </div>
         )}
       </div>
-      <Map
-        robotId={robotId}
-        robotName={robotName}
-        score={score}
-        update={updateScore}
-        resetMap={resetMap}
-        onResetComplete={() => setResetMap(false)}
-        stopwatch={stopwatch}
-        setStopwatch={setStopwatch}
-        isStopwatchRunning={isStopwatchRunning}
-        formatTime={formatTime}
-        completedOrDisqualifiedRobotsRef={completedOrDisqualifiedRobotsRef}
-      />
+      {rounds === "roundTwo" &&
+      completedOrDisqualifiedRobotsRef.current.size ===
+        Object.keys(robotsCache).length ? (
+        <Leaderboard formatTime={formatTime} />
+      ) : (
+        <Map
+          robotId={robotId}
+          leaderName={leaderName}
+          robotName={robotName}
+          score={score}
+          update={updateScore}
+          homePoints={TotalHomPoint}
+          rounds={rounds}
+          resetMap={resetMap}
+          onResetComplete={() => setResetMap(false)}
+          stopwatch={stopwatch}
+          setStopwatch={setStopwatch}
+          isStopwatchRunning={isStopwatchRunning}
+          formatTime={formatTime}
+          completedOrDisqualifiedRobotsRef={completedOrDisqualifiedRobotsRef}
+          disqualified={disqualifyRobot}
+        />
+      )}
     </div>
   );
 };
