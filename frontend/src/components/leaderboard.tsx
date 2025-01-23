@@ -43,10 +43,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ formatTime }) => {
           robot.TotalHomPoint,
           roundTwoRobot.TotalHomPoint
         ),
+        disqualified: robot.disqualified || roundTwoRobot.disqualified,
       };
     });
 
-    const sortedRobots = combinedRobots.sort((a, b) => {
+    const qualifiedRobots = combinedRobots.filter(
+      (robot) => !robot.disqualified
+    );
+    const disqualifiedRobots = combinedRobots.filter(
+      (robot) => robot.disqualified
+    );
+
+    const sortedQualifiedRobots = qualifiedRobots.sort((a, b) => {
       if (a.Max_Points > b.Max_Points) {
         return -1;
       } else if (a.Max_Points < b.Max_Points) {
@@ -68,7 +76,29 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ formatTime }) => {
       }
     });
 
-    setSortedRobots(sortedRobots);
+    const sortedDisqualifiedRobots = disqualifiedRobots.sort((a, b) => {
+      if (a.Max_Points > b.Max_Points) {
+        return -1;
+      } else if (a.Max_Points < b.Max_Points) {
+        return 1;
+      } else {
+        if (a.Time < b.Time) {
+          return -1;
+        } else if (a.Time > b.Time) {
+          return 1;
+        } else {
+          if (a.TotalHomPoint > b.TotalHomPoint) {
+            return -1;
+          } else if (a.TotalHomPoint < b.TotalHomPoint) {
+            return 1;
+          } else {
+            return 0;
+          }
+        }
+      }
+    });
+
+    setSortedRobots([...sortedQualifiedRobots, ...sortedDisqualifiedRobots]);
   }, [robotsRoundOne, robotsRoundTwo]);
 
   return (
