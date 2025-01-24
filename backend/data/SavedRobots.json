@@ -1,0 +1,78 @@
+{
+  "roundOne": [
+    {
+      "id": 1,
+      "leaderName": "Alice",
+      "robotName": "AlphaBot",
+      "score": 100,
+      "time": 120,
+      "homePoints": 80,
+      "disqualified": 0
+    },
+    {
+      "id": 2,
+      "leaderName": "Bob",
+      "robotName": "BetaBot",
+      "score": 90,
+      "time": 130,
+      "homePoints": 70,
+      "disqualified": 1
+    },
+    {
+      "id": 3,
+      "leaderName": "Charlie",
+      "robotName": "GammaBot",
+      "score": 85,
+      "time": 140,
+      "homePoints": 75,
+      "disqualified": 0
+    },
+    {
+      "id": 4,
+      "leaderName": "Dave",
+      "robotName": "DeltaBot",
+      "score": 95,
+      "time": 150,
+      "homePoints": 85,
+      "disqualified": 1
+    }
+  ],
+  "roundTwo": [
+    {
+      "id": 1,
+      "leaderName": "Alice",
+      "robotName": "AlphaBot",
+      "score": 100,
+      "time": 120,
+      "homePoints": 80,
+      "disqualified": 0
+    },
+    {
+      "id": 2,
+      "leaderName": "Bob",
+      "robotName": "BetaBot",
+      "score": 90,
+      "time": 130,
+      "homePoints": 70,
+      "disqualified": 1
+    },
+    {
+      "id": 3,
+      "leaderName": "Charlie",
+      "robotName": "GammaBot",
+      "score": 85,
+      "time": 140,
+      "homePoints": 75,
+      "disqualified": 0
+    },
+    {
+      "id": 4,
+      "leaderName": "Dave",
+      "robotName": "DeltaBot",
+      "score": 95,
+      "time": 150,
+      "homePoints": 85,
+      "disqualified": 1
+    }
+  ]
+}

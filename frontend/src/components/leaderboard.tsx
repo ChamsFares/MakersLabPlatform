@@ -1,13 +1,16 @@
 import axios from "axios";
+import lineFollower from "../assets/Istic_Robots_2.0_line_follower_icon.png";
 import React, { useEffect } from "react";
+import "../style/App.css";
 
 interface Robot {
-  robotId: number;
-  leader_name: string;
-  robot_name: string;
-  Max_Points: number;
-  Time: number;
+  id: number;
+  leaderName: string;
+  robotName: string;
+  score: number;
+  time: number;
   TotalHomPoint: number;
+  disqualified: number;
 }
 
 interface LeaderboardProps {
@@ -15,7 +18,7 @@ interface LeaderboardProps {
 }
 
 const fetchRobots = async () => {
-  const response = await axios("localhost:3000/api/leaderboard");
+  const response = await axios("http://localhost:3000/api/leaderboard");
   return await response.data;
 };
 
@@ -33,12 +36,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ formatTime }) => {
   }, []);
 
   useEffect(() => {
+    if (robotsRoundOne.length === 0 || robotsRoundTwo.length === 0) return;
+
     const combinedRobots = robotsRoundOne.map((robot, index) => {
       const roundTwoRobot = robotsRoundTwo[index];
       return {
         ...robot,
-        Max_Points: Math.max(robot.Max_Points, roundTwoRobot.Max_Points),
-        Time: Math.min(robot.Time, roundTwoRobot.Time),
+        score: Math.max(robot.score, roundTwoRobot.score),
+        time: Math.min(robot.time, roundTwoRobot.time),
         TotalHomPoint: Math.max(
           robot.TotalHomPoint,
           roundTwoRobot.TotalHomPoint
@@ -55,80 +60,67 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ formatTime }) => {
     );
 
     const sortedQualifiedRobots = qualifiedRobots.sort((a, b) => {
-      if (a.Max_Points > b.Max_Points) {
-        return -1;
-      } else if (a.Max_Points < b.Max_Points) {
-        return 1;
+      if (a.score !== b.score) {
+        return b.score - a.score;
+      } else if (a.time !== b.time) {
+        return a.time - b.time;
       } else {
-        if (a.Time < b.Time) {
-          return -1;
-        } else if (a.Time > b.Time) {
-          return 1;
-        } else {
-          if (a.TotalHomPoint > b.TotalHomPoint) {
-            return -1;
-          } else if (a.TotalHomPoint < b.TotalHomPoint) {
-            return 1;
-          } else {
-            return 0;
-          }
-        }
+        return b.TotalHomPoint - a.TotalHomPoint;
       }
     });
 
     const sortedDisqualifiedRobots = disqualifiedRobots.sort((a, b) => {
-      if (a.Max_Points > b.Max_Points) {
-        return -1;
-      } else if (a.Max_Points < b.Max_Points) {
-        return 1;
+      if (a.score !== b.score) {
+        return b.score - a.score;
+      } else if (a.time !== b.time) {
+        return a.time - b.time;
       } else {
-        if (a.Time < b.Time) {
-          return -1;
-        } else if (a.Time > b.Time) {
-          return 1;
-        } else {
-          if (a.TotalHomPoint > b.TotalHomPoint) {
-            return -1;
-          } else if (a.TotalHomPoint < b.TotalHomPoint) {
-            return 1;
-          } else {
-            return 0;
-          }
-        }
+        return b.TotalHomPoint - a.TotalHomPoint;
       }
     });
 
     setSortedRobots([...sortedQualifiedRobots, ...sortedDisqualifiedRobots]);
   }, [robotsRoundOne, robotsRoundTwo]);
+  console.log(sortedRobots);
 
   return (
-    <div>
-      <h2>Leaderboard</h2>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Leader</th>
-            <th>Name</th>
-            <th>Score</th>
-            <th>Time</th>
-            <th>HomPoints</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedRobots.map((robot) => (
-            <tr key={robot.robotId}>
-              <td>{sortedRobots.indexOf(robot) + 1}</td>
-              <td>{robot.leader_name}</td>
-              <td>{robot.robot_name}</td>
-              <td>{robot.Max_Points}</td>
-              <td>{formatTime(robot.Time)}</td>
-              <td>{robot.TotalHomPoint}</td>
-            </tr>
+    <div className="container">
+      <h1>Leaderboard</h1>
+      <div className="playerslist">
+        <div className="table">
+          <div></div>
+          <div>Rank</div>
+          <div>Leader Name</div>
+          <div>Robot Name</div>
+          <div>Score</div>
+          <div>time</div>
+        </div>
+        <div className="list">
+          {sortedRobots.map((robot, index) => (
+            <div
+              className="player"
+              key={robot.id}
+              style={{
+                backgroundColor: robot.disqualified ? "#FFDD00" : "#C77700",
+                opacity: robot.disqualified ? 0.7 : 1,
+              }}
+            >
+              <span>
+                <img
+                  src={lineFollower}
+                  alt=""
+                  style={{ width: "30px", height: "30px" }}
+                />
+              </span>
+              <span> {index + 1}</span>
+              <span> {robot.leaderName} </span>
+              <span> {robot.robotName} </span>
+              <span> {robot.score} </span>
+              <span> {formatTime(robot.time)} </span>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 };

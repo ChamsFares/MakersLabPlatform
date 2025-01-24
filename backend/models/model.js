@@ -1,6 +1,5 @@
 require("dotenv").config({ path: "../../.env" });
 const { writeApi, Point } = require("../utils/influxConfig.js");
-const { v4: uuidv4 } = require("uuid");
 
 writeApi.useDefaultTags({ source: "nodejs-client" });
 
@@ -10,7 +9,7 @@ const csv = require("csv-parser");
 
 writeApi.useDefaultTags({ source: "nodejs-client" });
 
-const filePath = path.join(__dirname, "../data/leaderboard.csv");
+const filePath = path.join(__dirname, "../data/output.csv");
 
 const readCSVFile = async () => {
   return new Promise((resolve, reject) => {
@@ -30,7 +29,7 @@ const readCSVFile = async () => {
 };
 console.log("Reading CSV file...");
 
-const processCSVData = async () => {
+exports.processCSVData = async () => {
   try {
     const data = await readCSVFile();
     data.forEach((row, index) => {
@@ -88,5 +87,3 @@ const processCSVData = async () => {
     console.error("Error processing CSV data:", error);
   }
 };
-
-processCSVData();

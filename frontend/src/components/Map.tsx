@@ -7,9 +7,10 @@ import challenge4img from "../assets/challengesImgs/challenge4.png";
 import challenge5img from "../assets/challengesImgs/challenge5.png";
 import fin from "../assets/challengesImgs/fin.png";
 import lineFollower from "../assets/Istic_Robots_2.0_line_follower_icon.png";
+import logo from "../assets/Istic_Robots_2.0.png";
 import io from "socket.io-client";
 import Swal from "sweetalert2";
-import "../App.css";
+import "../style/App.css";
 import axios from "axios";
 
 interface Robot {
@@ -208,13 +209,20 @@ const Map: React.FC<MapProps> = ({
 
   return (
     <div>
-      <div>
-        <img src={lineFollower}></img>
-        <p>Robot Name: {robotName}</p>
-        <p>Score: {score}</p>
-        <p>Time: {formatTime(stopwatch)}</p>
+      <div className="txt">
+        <img src={logo} className="istic" />
+        <div className="robot">
+          <img src={lineFollower} className="lineFollower"></img>
+          <p className="PP">Leader_Name: {leaderName}</p>
+          <p className="PP">Robot_Name: {robotName}</p>
+          <p className="PP">Score: {score}</p>
+          <p className="PP">Time: {formatTime(stopwatch)} </p>
+        </div>
       </div>
-      <img src={img} alt="Challenge" className="img" />
+
+      <div className="mapp">
+        <img src={img} alt="Challenge" className="img" />
+      </div>
     </div>
   );
 };

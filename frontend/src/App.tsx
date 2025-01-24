@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Map from "./components/Map";
 import axios from "axios";
 import Swal from "sweetalert2";
-import "./App.css";
-import logo from "./assets/Istic_Robots_2.0.png";
+import "./style/App.css";
+
 import Leaderboard from "./components/leaderboard";
 
 interface Robot {
@@ -37,8 +37,8 @@ const fetchRobots = async (): Promise<RobotsCache> => {
 
 const App: React.FC = (): JSX.Element => {
   const [robotId, setRobotId] = useState<string>("");
-  const [leaderName, setLeaderName] = useState<string>("");
-  const [robotName, setRobotName] = useState<string>("");
+  const [leaderName, setLeaderName] = useState<string>("unnamed");
+  const [robotName, setRobotName] = useState<string>("unnamed");
   const [score, setScore] = useState<number>(0);
   const [TotalHomPoint, setTotalHomPoint] = useState<number>(0);
   const [startclicked, setStartclicked] = useState<boolean>(false);
@@ -218,7 +218,6 @@ const App: React.FC = (): JSX.Element => {
 
   return (
     <div>
-      <img src={logo} className="img" />
       <div>
         {robotName && (
           <div>
@@ -231,23 +230,25 @@ const App: React.FC = (): JSX.Element => {
         Object.keys(robotsCache).length ? (
         <Leaderboard formatTime={formatTime} />
       ) : (
-        <Map
-          robotId={robotId}
-          leaderName={leaderName}
-          robotName={robotName}
-          score={score}
-          update={updateScore}
-          homePoints={TotalHomPoint}
-          rounds={rounds}
-          resetMap={resetMap}
-          onResetComplete={() => setResetMap(false)}
-          stopwatch={stopwatch}
-          setStopwatch={setStopwatch}
-          isStopwatchRunning={isStopwatchRunning}
-          formatTime={formatTime}
-          completedOrDisqualifiedRobotsRef={completedOrDisqualifiedRobotsRef}
-          disqualified={disqualifyRobot}
-        />
+        <div className="mapinapp">
+          <Map
+            robotId={robotId}
+            leaderName={leaderName}
+            robotName={robotName}
+            score={score}
+            update={updateScore}
+            homePoints={TotalHomPoint}
+            rounds={rounds}
+            resetMap={resetMap}
+            onResetComplete={() => setResetMap(false)}
+            stopwatch={stopwatch}
+            setStopwatch={setStopwatch}
+            isStopwatchRunning={isStopwatchRunning}
+            formatTime={formatTime}
+            completedOrDisqualifiedRobotsRef={completedOrDisqualifiedRobotsRef}
+            disqualified={disqualifyRobot}
+          />
+        </div>
       )}
     </div>
   );
